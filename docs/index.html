@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interaktywny system monitorowania poziomu cukru we krwi</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div id="user-profile">
+    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIwIDBDMzEuMDQ1NyAwIDQwIDguOTU0MzA1IDQwIDIwQzQwIDMxLjA0NTcgMzEuMDQ1NyA0MCAyMCA0MEM4Ljk1NDMwNSA0MCAwIDMxLjA0NTcgMCAyMEMwIDguOTU0MzA1IDguOTU0MzA1IDAgMjAgMFpNMjAgMTBDMjYuNjI3NCAxMCAzMiAxNS4zNzI2IDMyIDIyQzMyIDI4LjYyNzQgMjYuNjI3NCAzNCAyMCAzNEMxMy4zNzI2IDM0IDggMjguNjI3NCA4IDIyQzggMTUuMzcyNiAxMy4zNzI2IDEwIDIwIDEwWk0yMCAxMkMxNi42ODYzIDEyIDE0IDE0LjY4NjMgMTQgMThDMTQgMjEuMzEzNyAxNi42ODYzIDI0IDIwIDI0QzIzLjMxMzcgMjQgMjYgMjEuMzEzNyAyNiAxOEMyNiAxNC42ODYzIDIzLjMxMzcgMTIgMjAgMTJaIiBmaWxsPSIjOGIwMDAwIi8+Cjwvc3ZnPgo=" alt="Profil użytkownika" id="profile-pic">
+    <span id="username-display">Gość</span>
+  </div>
+  <h1>Interaktywny system monitorowania poziomu cukru we krwi</h1>
+  <nav>
+    <ul>
+      <li><a href="#" data-target="dashboard">Strona główna</a></li>
+      <li><a href="#" data-target="history">Historia</a></li>
+      <li><a href="#" data-target="analytics">Analizy</a></li>
+      <li><a href="#" data-target="settings">Ustawienia</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+  <!-- SZYBKI FORMULARZ DODAWANIA POMIARU -->
+  <div class="dashboard-card" id="quick-add-form">
+    <h2>Dodaj pomiar</h2>
+    <form id="quick-measurement-form">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+        <div>
+          <label for="quick-glucose">Glukoza (mg/dL):</label>
+          <input type="number" id="quick-glucose" required min="20" max="800" 
+                 style="width: 100%; padding: 8px;" placeholder="np. 120">
+        </div>
+        <div>
+          <label for="quick-insulin">Insulina (IU):</label>
+          <input type="number" id="quick-insulin" step="0.5" min="0" max="50"
+                 style="width: 100%; padding: 8px;" placeholder="np. 5">
+        </div>
+      </div>
+
+      <div style="margin-bottom: 10px;">
+        <label for="quick-carbs">Węglowodany (g):</label>
+        <input type="number" id="quick-carbs" step="1" min="0" max="300"
+               style="width: 100%; padding: 8px;" placeholder="np. 30">
+      </div>
+      
+      <div style="margin-bottom: 10px;">
+        <label for="quick-note">Notatka:</label>
+        <input type="text" id="quick-note" 
+               style="width: 100%; padding: 8px;" 
+               placeholder="np. Po śniadaniu">
+      </div>
+      
+      <button type="submit" 
+              style="background: #28a745; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer;">
+        📝 Dodaj pomiar
+      </button>
+    </form>
+  </div>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard">
+    <div class="dashboard-card" id="current-glucose-card">
+      <h2>Aktualny poziom glukozy</h2>
+      <p>[Aktualny poziom glukozy]</p>
+    </div>
+
+    <div class="dashboard-card" id="mini-chart">
+      <h2>Ostatnie 24h</h2>
+      <p>[Mini wykres poziomu glukozy]</p>
+    </div>
+
+    <div class="dashboard-card" id="daily-summary">
+      <h2>Podsumowanie dnia</h2>
+      <ul>
+        <li>Średni poziom glukozy: [Placeholder]</li>
+        <li>Liczba pomiarów: [Placeholder]</li>
+        <li>Minimalna wartość: [Placeholder]</li>
+        <li>Maksymalna wartość: [Placeholder]</li>
+      </ul>
+    </div>
+
+    <div class="dashboard-card" id="diabetes-basics">
+      <h2>Podstawy cukrzycy</h2>
+      <p>
+        Cukrzyca jest chorobą metaboliczną charakteryzującą się podwyższonym poziomem glukozy we krwi. Wyróżniamy dwa główne typy: typ 1, w którym organizm nie produkuje insuliny, oraz typ 2, w którym insulina jest niewystarczająca lub organizm nie reaguje na nią prawidłowo. Regularne monitorowanie poziomu glukozy pozwala ocenić skuteczność leczenia, zapobiegać powikłaniom oraz wspiera podejmowanie świadomych decyzji terapeutycznych.
+      </p>
+    </div>
+
+    <div class="dashboard-card" id="app-info">
+      <h2>O aplikacji</h2>
+      <p>
+        Aplikacja została zaprojektowana jako edukacyjny system monitorowania poziomu glukozy we krwi. Jej celem jest wsparcie osób z cukrzycą w codziennej samokontroli oraz wizualizacji danych pomiarowych. Wszystkie dane wprowadzane do aplikacji przechowywane są lokalnie w przeglądarce użytkownika. Aplikacja nie przesyła informacji na zewnętrzne serwery i ma charakter wyłącznie edukacyjny.
+      </p>
+    </div>
+  </section>
+
+  <!-- HISTORIA -->
+  <section id="history" class="hidden">
+    <h2>Historia pomiarów</h2>
+    <div class="table-wrap">
+      <table class="history">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Godzina</th>
+            <th>Poziom glukozy</th>
+            <th>Insulina (IU)</th>
+            <th>Węglowodany (g)</th>
+            <th>Notatka</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Wypełniane przez JS -->
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ANALIZY -->
+  <section id="analytics" class="hidden">
+    <h2>Analizy i statystyki</h2>
+    
+    <div class="analytics-card">
+      <h3>Wykres trendów</h3>
+      <div class="chart-controls">
+        <label for="trend-range-select">Wybierz zakres:</label>
+        <select id="trend-range-select" style="margin-left: 10px; padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd;">
+          <option value="days">Ostatnie 12 dni</option>
+          <option value="weeks">Ostatnie 12 tygodni</option>
+          <option value="months">Ostatnie 12 miesięcy</option>
+        </select>
+      </div>
+      <div class="placeholder" id="trend-placeholder">
+        <!-- Wykres pojawi się tutaj -->
+      </div>
+      <div id="chart-stats" style="margin-top: 15px;"></div>
+    </div>
+    
+    <div class="analytics-card">
+      <h3>Podsumowanie</h3>
+      <div class="placeholder" id="analytics-summary">
+        <!-- Statystyki pojawią się tutaj -->
+      </div>
+    </div>
+
+    <div class="analytics-card" id="analytics-info">
+      <h3>Analiza i statystyki</h3>
+      <p>
+        Aplikacja pozwala śledzić poziom glukozy w czasie dzięki automatycznemu generowaniu wykresów i podsumowań statystycznych. Możesz obserwować średnie wartości dzienne, tygodniowe i miesięczne, minimalne oraz maksymalne stężenia glukozy, a także trendy wzrostu lub spadku poziomu cukru. Dzięki temu łatwiej zidentyfikować czynniki wpływające na wahania glikemii, takie jak posiłki, aktywność fizyczna czy stres. Wizualizacja danych pomaga w szybkim wykrywaniu nieprawidłowości i ocenie skuteczności leczenia.
+      </p>
+    </div>
+
+    <div class="analytics-card" id="why-keep-log">
+      <h3>Dlaczego warto prowadzić dziennik glikemii</h3>
+      <p>Regularne zapisywanie pomiarów glukozy w dzienniku pozwala lepiej zrozumieć własne ciało i kontrolować przebieg cukrzycy. Prowadzenie dziennika:</p>
+      <ul>
+        <li>ułatwia podejmowanie świadomych decyzji żywieniowych i insulinowych,</li>
+        <li>pomaga lekarzowi w precyzyjnej ocenie terapii,</li>
+        <li>umożliwia szybkie wykrycie niepokojących trendów, takich jak częste spadki lub skoki cukru,</li>
+        <li>wspiera rozwój zdrowych nawyków i lepszą kontrolę choroby na co dzień.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- USTAWIENIA -->
+  <section id="settings" class="hidden">
+    <h2>Ustawienia</h2>
+    
+    <!-- KONTO UŻYTKOWNIKA -->
+    <div class="settings-card">
+      <h3>Konto użytkownika</h3>
+      <div id="account-section">
+        <div id="login-form" style="display: block;">
+          <div style="margin-bottom: 15px;">
+            <label for="username">Nazwa użytkownika:</label>
+            <input type="text" id="username" style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px;">
+          </div>
+          <div style="margin-bottom: 15px;">
+            <label for="password">Hasło:</label>
+            <input type="password" id="password" style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px;">
+          </div>
+          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <button id="register-btn" style="flex: 1; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+              Zarejestruj się
+            </button>
+            <button id="login-btn" style="flex: 1; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+              Zaloguj się
+            </button>
+          </div>
+        </div>
+        
+        <div id="user-info" style="display: none;">
+          <div style="padding: 15px; background: #e8f4f8; border-radius: 8px; margin-bottom: 15px;">
+            <div style="font-weight: bold; color: #1e3a8a;">Zalogowany jako: <span id="logged-user"></span></div>
+            <div style="font-size: 0.9em; color: #666; margin-top: 5px;">ID użytkownika: <span id="user-id"></span></div>
+          </div>
+          <button id="logout-btn" style="width: 100%; padding: 12px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+            Wyloguj się
+          </button>
+        </div>
+        
+        <div id="login-message" style="margin-top: 10px; padding: 10px; border-radius: 6px; display: none;"></div>
+      </div>
+    </div>
+    
+    <!-- USTAWIENIA WYGLĄDU -->
+    <div class="settings-card">
+      <h3>Wygląd</h3>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px 0;">
+        <span style="font-weight: bold;">Tryb ciemny</span>
+        <label class="switch">
+          <input type="checkbox" id="dark-mode-toggle">
+          <span class="slider round"></span>
+        </label>
+      </div>
+    </div>
+    
+    <!-- ZARZĄDZANIE DANYMI -->
+    <div class="settings-card">
+      <h3>Zarządzanie danymi</h3>
+      <ul class="settings-list">
+        <li>
+          <a href="#" id="export-data" style="display: block; text-decoration: none; color: inherit; padding: 12px;">
+            💾 Eksportuj dane do JSON
+          </a>
+        </li>
+        <li>
+          <a href="#" id="add-sample-data" style="display: block; text-decoration: none; color: inherit; padding: 12px;">
+            📊 Dodaj przykładowe dane
+          </a>
+        </li>
+        <li>
+          <a href="#" id="clear-all-data" style="display: block; text-decoration: none; color: #dc3545; padding: 12px;">
+            🗑️ Usuń wszystkie dane
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>Interaktywny system monitorowania poziomu cukru we krwi - wersja demo</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
