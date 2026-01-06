@@ -1,28 +1,55 @@
-/* Reset i podstawy */
+/* ===== RESET I PODSTAWY ===== */
+:root {
+  --bg-primary: #f4f5f7;
+  --bg-secondary: #ffffff;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --accent-color: #8b0000;
+  --border-color: #dee2e6;
+  --card-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  --hover-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+
+.dark-mode {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --accent-color: #ff6b6b;
+  --border-color: #404040;
+  --card-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  --hover-shadow: 0 6px 20px rgba(0,0,0,0.4);
+}
+
 html, body {
   margin: 0;
   padding: 0;
-  font-family: Arial, sans-serif;
-  background-color: #f4f5f7;
-  color: #333;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   line-height: 1.5;
+  transition: background-color 0.3s, color 0.3s;
 }
 
-/* HEADER z profilem i menu */
+/* ===== HEADER ===== */
 header {
-  background: #fff;
-  border-bottom: 2px solid #dee2e6;
+  background: var(--bg-secondary);
+  border-bottom: 2px solid var(--border-color);
   padding: 16px 24px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  transition: all 0.3s;
 }
 
 header h1 {
-  margin: 0 0 8px 0; /* mała przerwa pod tytułem */
+  margin: 0 0 8px 0;
+  color: var(--accent-color);
+  font-size: 1.8em;
 }
 
 nav {
-  border-top: 1px solid #e9ecef; /* cienka, jasna kreska oddzielająca tytuł od menu */
-  padding-top: 8px;
-  margin-top: 8px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 12px;
+  margin-top: 12px;
 }
 
 #user-profile {
@@ -33,407 +60,529 @@ nav {
 }
 
 #profile-pic {
-  width: 40px;
-  height: 40px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
-  border: 2px solid #8b0000;
+  border: 2px solid var(--accent-color);
   object-fit: cover;
+  background: var(--bg-primary);
 }
 
-/* MENU */
+/* ===== MENU ===== */
 nav ul {
   list-style: none;
   display: flex;
   gap: 24px;
   padding: 0;
+  margin: 0;
 }
 
 nav a {
   text-decoration: none;
-  color: #8b0000;
+  color: var(--accent-color);
   font-weight: bold;
+  padding: 8px 12px;
+  border-radius: 5px;
+  transition: all 0.3s;
 }
 
 nav a:hover {
-  color: #b22222;
+  color: white;
+  background-color: var(--accent-color);
 }
 
-/* DASHBOARD */
+/* ===== DASHBOARD ===== */
 #dashboard {
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
 .dashboard-card {
-  background: #fff;
+  background: var(--bg-secondary);
   border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  padding: 24px;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s;
 }
 
-/* wyróżnione kolory */
-#current-glucose-card { border-left: 5px solid #8b0000; }
-#mini-chart { border-left: 5px solid #1e3a8a; padding: 24px; height: 200px; }
-#daily-summary { border-left: 5px solid #2e3b4e; }
+.dashboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--hover-shadow);
+}
 
-/* PRZYCISK MODALNY */
-#open-add-measurement {
-  padding: 12px;
+#current-glucose-card { 
+  border-left: 5px solid var(--accent-color); 
+}
+
+#mini-chart { 
+  border-left: 5px solid #1e3a8a; 
+  min-height: 220px;
+}
+
+#daily-summary { 
+  border-left: 5px solid #2e3b4e; 
+}
+
+#quick-add-form {
+  border-left: 5px solid #28a745;
+  margin-bottom: 20px;
+}
+
+/* ===== PODSTRONY UKRYTE ===== */
+.hidden { 
+  display: none !important; 
+}
+
+/* ===== TABELA HISTORII ===== */
+#history {
+  padding: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.table-wrap {
+  overflow-x: auto;
   border-radius: 8px;
-  border: none;
-  background: #8b0000;
-  color: #fff;
-  cursor: pointer;
-  font-weight: bold;
-  width: 200px;
-  align-self: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-#open-add-measurement:hover { background-color: #b22222; }
-
-/* MODAL */
-#add-measurement-modal {
-  position: fixed;
-  top:0; left:0;
-  width:100%; height:100%;
-  background: rgba(0,0,0,0.5);
-  justify-content:center;
-  align-items:center;
-  z-index:1000;
-  display: none; /* ukryty domyślnie — widoczny gdy JS usunie klasę .hidden */
-}
-
-/* pokazuj modal gdy nie ma klasy .hidden (JS steruje widocznością) */
-#add-measurement-modal:not(.hidden) {
-  display: flex;
-}
-
-.modal-content {
-  background: #fff;
-  padding:24px;
-  border-radius:12px;
-  width:90%;
-  max-width:500px;
-  position:relative;
-}
-
-#close-modal {
-  position:absolute;
-  top:12px; right:16px;
-  cursor:pointer;
-  font-size:1.4em;
-  color:#8b0000;
-  text-decoration: none;
-  background: transparent;
-  border: none;
-  padding: 4px 6px;
-  border-radius: 4px;
-}
-
-#close-modal:hover { background: rgba(0,0,0,0.04); }
-
-/* PODSTRONY UKRYTE */
-.hidden { display: none; }
-/* upewnij się, że sekcje z ID (np. #dashboard) naprawdę się chowają, nawet jeśli mają własne reguły display */
-#dashboard.hidden,
-#history.hidden,
-#analytics.hidden,
-#settings.hidden {
-  display: none;
-}
-
-/* TABELA HISTORII */
 table.history {
-  width:100%;
-  border-collapse:collapse;
-  margin-top:12px;
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-secondary);
 }
 
 table.history th, table.history td {
-  border:1px solid #dee2e6;
-  padding:10px;
-  text-align:left;
+  border: 1px solid var(--border-color);
+  padding: 12px 15px;
+  text-align: left;
 }
 
 table.history th {
-  background:#f7f7f7;
-  color:#8b0000;
+  background: var(--accent-color);
+  color: white;
+  font-weight: bold;
 }
 
-/* ANALIZY */
+table.history tr:hover {
+  background-color: rgba(0,0,0,0.05);
+}
+
+.dark-mode table.history tr:hover {
+  background-color: rgba(255,255,255,0.05);
+}
+
+/* ===== ANALIZY ===== */
+#analytics {
+  padding: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
 .analytics-card {
-  background:#fff;
-  padding:20px;
-  border-radius:12px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.08);
-  margin-bottom:20px;
+  background: var(--bg-secondary);
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 24px;
 }
 
-.analytics-card .placeholder {
-  background:#f4f6f8;
-  color:#1e3a8a;
-  height:150px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border-radius:8px;
-  font-weight:bold;
+.analytics-card h3 {
+  color: #1e3a8a;
+  margin-top: 0;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 10px;
 }
 
-/* USTAWIENIA */
+.chart-controls {
+  margin: 15px 0;
+  padding: 15px;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chart-controls label {
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.chart-controls select {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  min-width: 200px;
+}
+
+.placeholder {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  font-style: italic;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  width: 100%;
+}
+
+/* ===== USTAWIENIA ===== */
+#settings {
+  padding: 24px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.settings-card {
+  background: var(--bg-secondary);
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 24px;
+}
+
+.settings-card h3 {
+  color: var(--accent-color);
+  margin-top: 0;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 10px;
+}
+
 .settings-list {
-  list-style:none;
-  padding:0;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .settings-list li {
-  padding:12px;
-  border-radius:8px;
-  border:1px solid #dee2e6;
-  background:#fff;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  overflow: hidden;
+  transition: all 0.3s;
 }
 
-/* STOPKA */
-footer {
-  background:#f1f3f5;
-  padding:16px;
-  text-align:center;
-  font-size:12px;
-  color:#555;
-  margin-top:40px;
+.settings-list li:hover {
+  transform: translateX(5px);
+  box-shadow: var(--hover-shadow);
 }
 
-/* RESPONSYWNOŚĆ */
-@media(max-width:768px){
-  nav ul{flex-direction:column; gap:12px;}
-  #dashboard{padding:16px;}
+.settings-list li a {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  padding: 16px;
+  transition: background-color 0.3s;
 }
-/* ============================================= */
-/* ULEPSZENIA STYLÓW - BEZ BIBLIOTEK            */
-/* ============================================= */
 
-/* ===== 1. KOLORY DLA POZIOMÓW CUKRU ===== */
-.glucose-low {
+.settings-list li a:hover {
+  background-color: rgba(0,0,0,0.05);
+}
+
+.dark-mode .settings-list li a:hover {
+  background-color: rgba(255,255,255,0.05);
+}
+
+/* ===== PRZEŁĄCZNIK DARK MODE ===== */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: var(--accent-color);
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* ===== KOLORY POZIOMÓW GLUKOZY ===== */
+.glucose-very-low {
   color: #dc3545;
   background-color: rgba(220, 53, 69, 0.1);
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
   display: inline-block;
+  font-weight: bold;
+}
+
+.glucose-low {
+  color: #ff9800;
+  background-color: rgba(255, 152, 0, 0.1);
+  padding: 4px 12px;
+  border-radius: 20px;
+  display: inline-block;
+  font-weight: bold;
 }
 
 .glucose-normal {
   color: #28a745;
   background-color: rgba(40, 167, 69, 0.1);
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
   display: inline-block;
+  font-weight: bold;
 }
 
 .glucose-high {
-  color: #ffc107;
-  background-color: rgba(255, 193, 7, 0.1);
-  padding: 2px 8px;
-  border-radius: 4px;
+  color: #ff9800;
+  background-color: rgba(255, 152, 0, 0.1);
+  padding: 4px 12px;
+  border-radius: 20px;
   display: inline-block;
+  font-weight: bold;
 }
 
 .glucose-very-high {
   color: #dc3545;
   background-color: rgba(220, 53, 69, 0.2);
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
   display: inline-block;
+  font-weight: bold;
 }
 
-/* ===== 2. POPRAWKI DLA MINI WYKRESU ===== */
-#mini-chart {
-  min-height: 220px;
-  display: flex;
-  flex-direction: column;
+.dark-mode .glucose-very-low {
+  background-color: rgba(220, 53, 69, 0.3);
 }
 
-#mini-chart p {
-  flex-grow: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0;
+.dark-mode .glucose-low {
+  background-color: rgba(255, 152, 0, 0.3);
 }
 
-/* ===== 3. LEPSZE WYŚWIETLANIE DANYCH W ANALIZACH ===== */
-.analytics-card .placeholder {
-  padding: 0 !important;
-  overflow: hidden;
+.dark-mode .glucose-normal {
+  background-color: rgba(40, 167, 69, 0.3);
 }
 
-/* ===== 4. RESPONSYWNOŚĆ TABELI ===== */
-@media (max-width: 600px) {
-  .table-wrap {
-    margin-left: -10px;
-    margin-right: -10px;
-    border-radius: 0;
+.dark-mode .glucose-high {
+  background-color: rgba(255, 152, 0, 0.3);
+}
+
+.dark-mode .glucose-very-high {
+  background-color: rgba(220, 53, 69, 0.4);
+}
+
+/* ===== STOPKA ===== */
+footer {
+  background: var(--bg-primary);
+  padding: 20px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 40px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* ===== FORMULARZE ===== */
+input, select, textarea {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: all 0.3s;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.2);
+}
+
+.dark-mode input:focus,
+.dark-mode select:focus,
+.dark-mode textarea:focus {
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.3);
+}
+
+button {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+button:hover {
+  background: #7a0000;
+  transform: translateY(-1px);
+}
+
+.dark-mode button:hover {
+  background: #ff5252;
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* ===== RESPONSYWNOŚĆ ===== */
+@media (max-width: 768px) {
+  header {
+    padding: 12px 16px;
   }
   
-  table.history {
+  nav ul {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  nav a {
+    display: block;
+    padding: 10px;
+  }
+  
+  #dashboard, #history, #analytics, #settings {
+    padding: 16px;
+  }
+  
+  .dashboard-card, .analytics-card, .settings-card {
+    padding: 16px;
+  }
+  
+  table.history th, table.history td {
+    padding: 8px 10px;
     font-size: 14px;
   }
   
-  table.history td:nth-child(5), /* Piąta kolumna (notatka) */
-  table.history th:nth-child(5) {
-    max-width: 100px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .chart-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .chart-controls select {
+    width: 100%;
   }
 }
 
-/* ===== 5. DODATKOWE STYLE DLA FORMULARZA ===== */
-#add-measurement-modal input[type="number"] {
-  font-size: 1.1em;
-  font-weight: bold;
+/* ===== ANIMACJE ===== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-#add-measurement-modal input:focus,
-#add-measurement-modal textarea:focus {
-  outline: 2px solid #8b0000;
-  border-color: #8b0000;
+.dashboard-card, .analytics-card, .settings-card {
+  animation: fadeIn 0.3s ease-out;
 }
 
-/* ===== 6. STYL DLA PUSTYCH STANÓW ===== */
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: #6c757d;
-  font-style: italic;
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }
 
-/* ===== 7. ANIMACJE ===== */
-.dashboard-card {
-  transition: transform 0.2s, box-shadow 0.2s;
+.glucose-status-message {
+  animation: pulse 2s infinite;
 }
 
-.dashboard-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
-}
-
-/* ===== 8. POPRAWKI DLA NAGŁÓWKA ===== */
-header h1 {
-  color: #8b0000;
-  margin-bottom: 5px;
-}
-
-/* ===== 9. STYLE DLA STOPKI ===== */
-footer {
-  margin-top: 40px;
-  padding-top: 20px;
-  border-top: 1px solid #dee2e6;
-  background-color: #f8f9fa;
-}
-
-/* ===== 10. UKRYWANIE PUSTYCH SEKCJI ===== */
-#dashboard:empty::before,
-#history:empty::before {
-  content: "Ładowanie danych...";
-  display: block;
-  text-align: center;
-  padding: 40px;
-  color: #6c757d;
-  font-style: italic;
-}
-/* ===== STYLE DLA SZYBKIEGO FORMULARZA ===== */
-#quick-add-form {
-  border-left: 5px solid #28a745;
-}
-
-#quick-measurement-form input {
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1em;
-}
-
-#quick-measurement-form input:focus {
-  outline: 2px solid #28a745;
-  border-color: #28a745;
-}
-
-/* ===== STYLE DLA PRZYCISKÓW W USTAWIENIACH ===== */
-.settings-list li a:hover {
-  background-color: #f8f9fa;
-  border-radius: 5px;
-}
-
-#clear-all-data {
-  color: #dc3545 !important;
-  font-weight: bold;
-}
-
-#clear-all-data:hover {
-  background-color: rgba(220, 53, 69, 0.1) !important;
-}
-
-#add-sample-data {
-  color: #6f42c1 !important;
-}
-
-#add-sample-data:hover {
-  background-color: rgba(111, 66, 193, 0.1) !important;
-}
-
-#export-data {
-  color: #17a2b8 !important;
-}
-
-#export-data:hover {
-  background-color: rgba(23, 162, 184, 0.1) !important;
-}
-
-/* ===== STYLE DLA WIZUALIZACJI DANYCH ===== */
-.data-visualization {
-  display: flex;
-  align-items: center;
-  margin: 10px 0;
-}
-
-.glucose-bar {
-  height: 20px;
-  border-radius: 10px;
-  margin-right: 10px;
-  transition: width 0.5s;
-}
-
-.glucose-value {
-  font-weight: bold;
-  min-width: 50px;
-}
-
-/* ===== LEGENDA POZIOMÓW CUKRU ===== */
+/* ===== LEGENDA ===== */
 .legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 20px;
-  padding: 10px;
-  background: #f8f9fa;
-  border-radius: 5px;
+  gap: 15px;
+  margin-top: 15px;
+  padding: 15px;
+  background: var(--bg-primary);
+  border-radius: 8px;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
+  font-size: 14px;
 }
 
 .legend-color {
-  width: 15px;
-  height: 15px;
-  border-radius: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+}
+
+/* ===== STYLE SPECJALNE DLA DARK MODE ===== */
+.dark-mode nav a:hover {
+  background-color: #ff5252;
+}
+
+.dark-mode .analytics-card h3 {
+  color: #8bb4ff;
+}
+
+.dark-mode #mini-chart {
+  border-left-color: #8bb4ff;
+}
+
+.dark-mode #daily-summary {
+  border-left-color: #a0aec0;
+}
+
+.dark-mode #quick-add-form {
+  border-left-color: #48bb78;
+}
+
+.dark-mode footer {
+  border-top-color: #404040;
 }

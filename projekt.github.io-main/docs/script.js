@@ -1,15 +1,209 @@
+// =============================================
+// INTERAKTYWNY SYSTEM MONITOROWANIA POZIOMU CUKRU
+// =============================================
+
 document.addEventListener('DOMContentLoaded', function() {
+  // ===== SYSTEM MOTYWU =====
+  const darkModeToggle = document.getElementById('dark-mode-toggle');
+  const body = document.body;
+  
+  // Sprawdzamy zapisany motyw
+  const savedTheme = localStorage.getItem('glucoseAppTheme');
+  if (savedTheme === 'dark') {
+    body.classList.add('dark-mode');
+    if (darkModeToggle) darkModeToggle.checked = true;
+  }
+  
+  // Obsługa przełącznika dark mode
+  if (darkModeToggle) {
+    darkModeToggle.addEventListener('change', function() {
+      if (this.checked) {
+        body.classList.add('dark-mode');
+        localStorage.setItem('glucoseAppTheme', 'dark');
+      } else {
+        body.classList.remove('dark-mode');
+        localStorage.setItem('glucoseAppTheme', 'light');
+      }
+    });
+  }
+
+  // ===== SYSTEM KONT UŻYTKOWNIKÓW =====
+  let currentUser = JSON.parse(localStorage.getItem('glucoseCurrentUser')) || null;
+  let users = JSON.parse(localStorage.getItem('glucoseUsers')) || {};
+  let measurements = [];
+  
+  // Inicjalizacja danych dla aktualnego użytkownika
+  function initializeUserData() {
+    if (currentUser && users[currentUser]) {
+      measurements = users[currentUser].measurements || [];
+      updateLoginUI();
+      updateUsernameDisplay();
+    } else {
+      measurements = JSON.parse(localStorage.getItem('glucoseMeasurements')) || [];
+    }
+  }
+  
+  function updateUsernameDisplay() {
+    const display = document.getElementById('username-display');
+    if (display) {
+      display.textContent = currentUser ? currentUser : 'Gość';
+    }
+  }
+  
+  function updateLoginUI() {
+    const loginForm = document.getElementById('login-form');
+    const userInfo = document.getElementById('user-info');
+    const loggedUserSpan = document.getElementById('logged-user');
+    const userIdSpan = document.getElementById('user-id');
+    
+    if (currentUser) {
+      if (loginForm) loginForm.style.display = 'none';
+      if (userInfo) userInfo.style.display = 'block';
+      if (loggedUserSpan) loggedUserSpan.textContent = currentUser;
+      if (userIdSpan) userIdSpan.textContent = users[currentUser]?.userId || 'N/A';
+    } else {
+      if (loginForm) loginForm.style.display = 'block';
+      if (userInfo) userInfo.style.display = 'none';
+    }
+  }
+  
+  function showLoginMessage(message, type = 'info') {
+    const messageDiv = document.getElementById('login-message');
+    if (!messageDiv) return;
+    
+    messageDiv.textContent = message;
+    messageDiv.style.display = 'block';
+    messageDiv.style.backgroundColor = type === 'success' ? '#d4edda' : 
+                                       type === 'error' ? '#f8d7da' : 
+                                       type === 'warning' ? '#fff3cd' : '#d1ecf1';
+    messageDiv.style.color = type === 'success' ? '#155724' : 
+                             type === 'error' ? '#721c24' : 
+                             type === 'warning' ? '#856404' : '#0c5460';
+    messageDiv.style.border = `1px solid ${type === 'success' ? '#c3e6cb' : 
+                               type === 'error' ? '#f5c6cb' : 
+                               type === 'warning' ? '#ffeaa7' : '#bee5eb'}`;
+    
+    setTimeout(() => {
+      messageDiv.style.display = 'none';
+    }, 5000);
+  }
+  
+  // Rejestracja użytkownika
+  document.getElementById('register-btn')?.addEventListener('click', function() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    
+    if (!username || !password) {
+      showLoginMessage('Wprowadź nazwę użytkownika i hasło', 'warning');
+      return;
+    }
+    
+    if (username.length < 3) {
+      showLoginMessage('Nazwa użytkownika musi mieć co najmniej 3 znaki', 'warning');
+      return;
+    }
+    
+    if (password.length < 4) {
+      showLoginMessage('Hasło musi mieć co najmniej 4 znaki', 'warning');
+      return;
+    }
+    
+    if (users[username]) {
+      showLoginMessage('Użytkownik już istnieje', 'error');
+      return;
+    }
+    
+    // Tworzenie nowego użytkownika
+    users[username] = {
+      password: password, // W prawdziwej aplikacji powinno być hashowane!
+      userId: 'user_' + Date.now(),
+      measurements: [],
+      createdAt: new Date().toISOString(),
+      settings: {}
+    };
+    
+    localStorage.setItem('glucoseUsers', JSON.stringify(users));
+    showLoginMessage('Konto zostało utworzone! Możesz się zalogować', 'success');
+    
+    // Czyścimy formularz
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+  });
+  
+  // Logowanie
+  document.getElementById('login-btn')?.addEventListener('click', function() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    
+    if (!username || !password) {
+      showLoginMessage('Wprowadź nazwę użytkownika i hasło', 'warning');
+      return;
+    }
+    
+    if (!users[username]) {
+      showLoginMessage('Użytkownik nie istnieje', 'error');
+      return;
+    }
+    
+    if (users[username].password !== password) {
+      showLoginMessage('Nieprawidłowe hasło', 'error');
+      return;
+    }
+    
+    currentUser = username;
+    localStorage.setItem('glucoseCurrentUser', JSON.stringify(currentUser));
+    
+    // Przenosimy stare dane do konta użytkownika (jeśli istnieją)
+    const oldMeasurements = JSON.parse(localStorage.getItem('glucoseMeasurements')) || [];
+    if (oldMeasurements.length > 0 && users[currentUser].measurements.length === 0) {
+      users[currentUser].measurements = [...oldMeasurements];
+      localStorage.removeItem('glucoseMeasurements');
+    }
+    
+    localStorage.setItem('glucoseUsers', JSON.stringify(users));
+    
+    initializeUserData();
+    updateAllSections();
+    showLoginMessage(`Witaj ${username}!`, 'success');
+    showNotification(`👋 Witaj ${username}!`, 'success');
+  });
+  
+  // Wylogowanie
+  document.getElementById('logout-btn')?.addEventListener('click', function() {
+    currentUser = null;
+    localStorage.removeItem('glucoseCurrentUser');
+    measurements = JSON.parse(localStorage.getItem('glucoseMeasurements')) || [];
+    updateUsernameDisplay();
+    updateLoginUI();
+    updateAllSections();
+    showLoginMessage('Wylogowano pomyślnie', 'info');
+    showNotification('👋 Wylogowano pomyślnie', 'info');
+  });
+  
+  // Inicjalizacja UI logowania
+  updateUsernameDisplay();
+  updateLoginUI();
+  initializeUserData();
+  
+  // ===== PRZECHOWYWANIE DANYCH =====
+  function saveUserData() {
+    if (currentUser && users[currentUser]) {
+      users[currentUser].measurements = measurements;
+      localStorage.setItem('glucoseUsers', JSON.stringify(users));
+    } else {
+      localStorage.setItem('glucoseMeasurements', JSON.stringify(measurements));
+    }
+  }
+  
   // ===== MENU SPA =====
   const menuLinks = document.querySelectorAll('nav a');
   const sections = document.querySelectorAll('main section');
 
   menuLinks.forEach(link => {
     link.addEventListener('click', e => {
-      e.preventDefault(); // blokujemy domyślny link
-      const targetId = link.getAttribute('data-target'); // pobieramy ID sekcji
+      e.preventDefault();
+      const targetId = link.getAttribute('data-target');
 
-      // jeśli kliknięto 'dashboard' — pokaż tylko dashboard
-      // w przeciwnym razie pokaż tylko docelową sekcję i ukryj dashboard
       sections.forEach(sec => {
         if (targetId === 'dashboard') {
           if (sec.id === 'dashboard') sec.classList.remove('hidden');
@@ -19,734 +213,709 @@ document.addEventListener('DOMContentLoaded', function() {
           else sec.classList.add('hidden');
         }
       });
+
+      if (targetId === 'analytics') {
+        setTimeout(() => {
+          const rangeSelect = document.getElementById('trend-range-select');
+          const range = rangeSelect ? rangeSelect.value : 'days';
+          renderTrendChart(range);
+          updateAnalyticsSummary();
+        }, 120);
+      }
     });
   });
 
-  // ===== MODAL DODAWANIA POMIARU =====
-  const openModalBtn = document.getElementById('open-add-measurement');
-  const modal = document.getElementById('add-measurement-modal');
-  const closeModal = document.getElementById('close-modal');
-
-  // otwieranie modala
-  openModalBtn.addEventListener('click', () => modal.classList.remove('hidden'));
-
-  // zamykanie modala po kliknięciu X
-  closeModal.addEventListener('click', () => modal.classList.add('hidden'));
-
-  // zamykanie modala po kliknięciu poza modal
-  window.addEventListener('click', e => {
-    if(e.target === modal) modal.classList.add('hidden');
-  });
-});
-// =============================================
-// SYSTEM MONITOROWANIA CUKRU - CZYSTY JAVASCRIPT
-// =============================================
-
-// ===== 1. PRZECHOWYWANIE DANYCH =====
-// Pobieramy dane z localStorage lub tworzymy pustą tablicę
-let measurements = JSON.parse(localStorage.getItem('glucoseMeasurements')) || [];
-// =============================================
-// PRZYKŁADOWE DANE TESTOWE
-// =============================================
-
-// Jeśli nie ma jeszcze danych w localStorage, dodajemy przykładowe
-if (measurements.length === 0) {
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const twoDaysAgo = new Date(today);
-  twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-  
-  // Formatujemy daty na YYYY-MM-DD
-  function formatDate(date) {
-    return date.toISOString().split('T')[0];
+  // ===== POMOCNICZE FUNKCJE =====
+  function getGlucoseClass(value) {
+    if (value < 50) return 'glucose-very-low';
+    if (value < 70) return 'glucose-low';
+    if (value <= 140) return 'glucose-normal';
+    if (value <= 180) return 'glucose-high';
+    return 'glucose-very-high';
   }
-  
-  measurements = [
-    // Dziś
-    {
-      id: Date.now() - 10000,
-      glucose: 95,
-      date: formatDate(today),
-      time: "08:15",
-      insulin: 8,
-      note: "Na czczo, przed śniadaniem",
-      timestamp: new Date(`${formatDate(today)}T08:15`).getTime()
-    },
-    {
-      id: Date.now() - 20000,
-      glucose: 145,
-      date: formatDate(today),
-      time: "13:30",
-      insulin: 12,
-      note: "Po obiedzie - spaghetti",
-      timestamp: new Date(`${formatDate(today)}T13:30`).getTime()
-    },
-    {
-      id: Date.now() - 30000,
-      glucose: 120,
-      date: formatDate(today),
-      time: "19:45",
-      insulin: 6,
-      note: "Przed kolacją",
-      timestamp: new Date(`${formatDate(today)}T19:45`).getTime()
-    },
+
+  function getGlucoseColor(value) {
+    if (value < 50) return '#dc3545';
+    if (value < 70) return '#ffc107';
+    if (value <= 140) return '#28a745';
+    if (value <= 180) return '#ffc107';
+    return '#dc3545';
+  }
+
+  function showNotification(message, type = 'info') {
+    let notification = document.getElementById('system-notification');
     
-    // Wczoraj
-    {
-      id: Date.now() - 40000,
-      glucose: 105,
-      date: formatDate(yesterday),
-      time: "07:45",
-      insulin: 7,
-      note: "Poranny pomiar",
-      timestamp: new Date(`${formatDate(yesterday)}T07:45`).getTime()
-    },
-    {
-      id: Date.now() - 50000,
-      glucose: 180,
-      date: formatDate(yesterday),
-      time: "14:00",
-      insulin: 15,
-      note: "Po obiedzie - pizza",
-      timestamp: new Date(`${formatDate(yesterday)}T14:00`).getTime()
-    },
-    {
-      id: Date.now() - 60000,
-      glucose: 85,
-      date: formatDate(yesterday),
-      time: "22:00",
-      insulin: 4,
-      note: "Przed snem",
-      timestamp: new Date(`${formatDate(yesterday)}T22:00`).getTime()
-    },
-    
-    // Przedwczoraj
-    {
-      id: Date.now() - 70000,
-      glucose: 115,
-      date: formatDate(twoDaysAgo),
-      time: "08:30",
-      insulin: 9,
-      note: "Śniadanie - owsianka",
-      timestamp: new Date(`${formatDate(twoDaysAgo)}T08:30`).getTime()
-    },
-    {
-      id: Date.now() - 80000,
-      glucose: 65,
-      date: formatDate(twoDaysAgo),
-      time: "12:15",
-      insulin: 0,
-      note: "Hipoglikemia! Zjadłem banana",
-      timestamp: new Date(`${formatDate(twoDaysAgo)}T12:15`).getTime()
-    },
-    {
-      id: Date.now() - 90000,
-      glucose: 160,
-      date: formatDate(twoDaysAgo),
-      time: "18:45",
-      insulin: 10,
-      note: "Po treningu",
-      timestamp: new Date(`${formatDate(twoDaysAgo)}T18:45`).getTime()
+    if (!notification) {
+      notification = document.createElement('div');
+      notification.id = 'system-notification';
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 5px;
+        color: white;
+        font-weight: bold;
+        z-index: 9999;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        opacity: 0;
+        transform: translateY(-20px);
+        transition: opacity 0.3s, transform 0.3s;
+      `;
+      document.body.appendChild(notification);
     }
-  ];
-  
-  // Zapisujemy przykładowe dane do localStorage
-  localStorage.setItem('glucoseMeasurements', JSON.stringify(measurements));
-  
-  console.log('✅ Załadowano przykładowe dane testowe!');
-}
-// ===== 2. POMOCNICZE FUNKCJE =====
-// Formatuje datę i godzinę na polski format
-function formatDateTime(dateStr, timeStr) {
-  if (!dateStr) {
-    // Jeśli nie ma daty, używamy bieżącej
-    const now = new Date();
-    return now.toLocaleString('pl-PL');
+    
+    const colors = {
+      success: '#28a745',
+      error: '#dc3545',
+      warning: '#ffc107',
+      info: '#17a2b8'
+    };
+    
+    notification.style.backgroundColor = colors[type] || colors.info;
+    notification.textContent = message;
+    
+    setTimeout(() => {
+      notification.style.opacity = '1';
+      notification.style.transform = 'translateY(0)';
+    }, 10);
+    
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transform = 'translateY(-20px)';
+    }, 3000);
   }
-  const date = new Date(`${dateStr}T${timeStr || '12:00'}`);
-  return date.toLocaleString('pl-PL');
-}
 
-// Formatuje tylko datę
-function formatDateForDisplay(dateStr) {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('pl-PL');
-}
-
-// Sprawdza poziom cukru i zwraca odpowiednią klasę CSS
-function getGlucoseClass(value) {
-  if (value < 70) return 'glucose-low';      // Za niski
-  if (value <= 180) return 'glucose-normal'; // Norma
-  if (value <= 250) return 'glucose-high';   // Podwyższony
-  return 'glucose-very-high';               // Bardzo wysoki
-}
-
-// ===== 3. OBSŁUGA FORMULARZA =====
-const measurementForm = document.querySelector('#add-measurement-modal form');
-
-measurementForm.addEventListener('submit', function(e) {
-  e.preventDefault(); // Zatrzymujemy domyślne wysłanie formularza
-  
-  // Pobieramy wartości z formularza
-  const glucoseInput = document.getElementById('poziom-cukru');
-  const dateInput = document.getElementById('data-pomiaru');
-  const timeInput = document.getElementById('godzina-pomiaru');
-  const insulinInput = document.getElementById('dawka-insuliny');
-  const noteInput = document.getElementById('notatka');
-  
-  // Sprawdzamy czy podano wymagane pole (cukier)
-  if (!glucoseInput.value) {
-    alert('Proszę podać poziom cukru!');
-    glucoseInput.focus();
-    return;
+  // ===== AKTUALIZACJA WSZYSTKICH SEKCJI =====
+  function updateAllSections() {
+    updateDashboard();
+    updateHistoryTable();
+    updateMiniChart();
+    updateAnalyticsSummary();
+    
+    const rangeSelect = document.getElementById('trend-range-select');
+    const range = rangeSelect ? rangeSelect.value : 'days';
+    renderTrendChart(range);
   }
-  
-  // Tworzymy nowy pomiar
-  const now = new Date();
-  const measurement = {
-    id: Date.now(), // Unikalne ID
-    glucose: parseInt(glucoseInput.value),
-    date: dateInput.value || now.toISOString().split('T')[0],
-    time: timeInput.value || now.toTimeString().slice(0,5),
-    insulin: insulinInput.value || '-',
-    note: noteInput.value || '-',
-    timestamp: new Date(`${dateInput.value || now.toISOString().split('T')[0]}T${timeInput.value || now.toTimeString().slice(0,5)}`).getTime(),
-    glucoseClass: getGlucoseClass(parseInt(glucoseInput.value)) // Dodajemy klasę CSS
-  };
-  
-  // Dodajemy do tablicy i zapisujemy
-  measurements.push(measurement);
-  localStorage.setItem('glucoseMeasurements', JSON.stringify(measurements));
-  
-  // Aktualizujemy stronę
-  updateAllSections();
-  
-  // Resetujemy formularz i zamykamy modal
-  measurementForm.reset();
-  modal.classList.add('hidden');
-  
-  // Pokazujemy potwierdzenie
-  showNotification('✅ Pomiar dodany pomyślnie!', 'success');
-});
 
-// ===== 4. FUNKCJA AKTUALIZUJĄCA CAŁĄ STRONĘ =====
-function updateAllSections() {
-  updateDashboard();
-  updateHistoryTable();
-  updateMiniChart();
-  updateAnalytics();
-}
-
-// ===== 5. AKTUALIZACJA DASHBOARDU =====
-function updateDashboard() {
-  const currentGlucoseCard = document.querySelector('#current-glucose-card p');
-  const summaryList = document.querySelector('#daily-summary ul');
-  
-  if (measurements.length === 0) {
-    // Jeśli nie ma pomiarów, pokazujemy informację
+  // ===== DASHBOARD =====
+  function updateDashboard() {
+    const currentGlucoseCard = document.querySelector('#current-glucose-card p');
+    const summaryList = document.querySelector('#daily-summary ul');
+    
+    if (measurements.length === 0) {
+      if (currentGlucoseCard) {
+        currentGlucoseCard.innerHTML = '<em>Brak pomiarów. Dodaj pierwszy pomiar!</em>';
+      }
+      if (summaryList) {
+        summaryList.innerHTML = '<li><em>Brak danych do wyświetlenia</em></li>';
+      }
+      return;
+    }
+    
+    // Najnowszy pomiar
+    const latest = measurements[measurements.length - 1];
     if (currentGlucoseCard) {
-      currentGlucoseCard.innerHTML = '<em>Brak pomiarów. Dodaj pierwszy pomiar!</em>';
+      const glucoseClass = getGlucoseClass(latest.glucose);
+      const g = latest.glucose;
+      
+      let statusMsg = 'prawidłowy poziom cukru';
+      let statusIcon = '✅';
+      if (g < 50) { statusMsg = 'Bardzo niski cukier'; statusIcon = '⚠️'; }
+      else if (g < 70) { statusMsg = 'Niski cukier'; statusIcon = '⚠️'; }
+      else if (g <= 140) { statusMsg = 'Prawidłowy poziom cukru'; statusIcon = '✅'; }
+      else if (g <= 180) { statusMsg = 'Za wysoki poziom cukru'; statusIcon = '⚠️'; }
+      else { statusMsg = 'Bardzo wysoki cukier'; statusIcon = '🚨'; }
+
+      const date = new Date(latest.date + 'T' + latest.time);
+      const formattedDate = date.toLocaleDateString('pl-PL', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      currentGlucoseCard.innerHTML = `
+        <span class="${glucoseClass}" style="font-size: 2em; font-weight: bold; display: block; margin-bottom: 10px;">
+          ${g} mg/dL
+        </span>
+        <small style="color: #666;">${formattedDate}</small>
+        <div class="glucose-status-message" style="margin-top:10px; font-weight:600; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+          ${statusIcon} ${statusMsg}
+        </div>
+      `;
     }
-    if (summaryList) {
-      summaryList.innerHTML = '<li><em>Brak danych do wyświetlenia</em></li>';
+    
+    // Statystyki ostatnich 24h
+    const now = Date.now();
+    const last24h = measurements.filter(m => now - m.timestamp <= 24 * 60 * 60 * 1000);
+    
+    if (last24h.length > 0) {
+      const values = last24h.map(m => m.glucose);
+      const avg = Math.round(values.reduce((a,b) => a+b) / values.length);
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      
+      const summaryHTML = `
+        <li><strong>Średni poziom glukozy:</strong> <span class="${getGlucoseClass(avg)}">${avg} mg/dL</span></li>
+        <li><strong>Liczba pomiarów:</strong> ${last24h.length}</li>
+        <li><strong>Minimalna wartość:</strong> <span class="${getGlucoseClass(min)}">${min} mg/dL</span></li>
+        <li><strong>Maksymalna wartość:</strong> <span class="${getGlucoseClass(max)}">${max} mg/dL</span></li>
+      `;
+      
+      if (summaryList) summaryList.innerHTML = summaryHTML;
     }
-    return;
   }
-  
-  // --- NAJNOWSZY POMIAR ---
-  const latest = measurements[measurements.length - 1];
-  if (currentGlucoseCard) {
-    const glucoseClass = getGlucoseClass(latest.glucose);
-    currentGlucoseCard.innerHTML = `
-      <span class="${glucoseClass}" style="font-size: 1.5em; font-weight: bold;">
-        ${latest.glucose} mg/dL
-      </span><br>
-      <small>${formatDateTime(latest.date, latest.time)}</small>
+
+  // ===== MINI WYKRES 24H =====
+  function updateMiniChart() {
+    const miniChartDiv = document.querySelector('#mini-chart');
+    if (!miniChartDiv) return;
+    
+    const chartContent = miniChartDiv.querySelector('p') || document.createElement('p');
+    
+    // Pobieramy pomiary z ostatnich 24h
+    const now = Date.now();
+    const last24h = measurements.filter(m => now - m.timestamp <= 24 * 60 * 60 * 1000);
+    
+    if (last24h.length === 0) {
+      chartContent.innerHTML = '<em>Brak pomiarów w ciągu ostatnich 24 godzin</em>';
+      if (!miniChartDiv.querySelector('p')) miniChartDiv.appendChild(chartContent);
+      return;
+    }
+    
+    // Sortujemy od najstarszego do najnowszego
+    const sorted = [...last24h].sort((a, b) => a.timestamp - b.timestamp);
+    
+    // Przygotowujemy dane
+    const values = sorted.map(m => m.glucose);
+    const times = sorted.map(m => {
+      const hour = parseInt(m.time.substring(0, 2));
+      const minute = m.time.substring(3, 5);
+      return `${hour}:${minute}`;
+    });
+    
+    // Obliczamy zakres dla skalowania (słupki rosną DO GÓRY)
+    const maxVal = Math.max(...values);
+    const minVal = Math.min(...values);
+    const range = maxVal - minVal || 1;
+    
+    // Tworzymy wykres słupkowy
+    const chartHTML = `
+      <div style="width: 100%; height: 150px; display: flex; align-items: flex-end; justify-content: space-between; padding: 10px 0;">
+        ${values.map((val, index) => {
+          // Wysokość słupka: im większa wartość, tym wyższy słupek
+          const heightPercent = range > 0 ? 10 + ((val - minVal) / range * 80) : 50;
+          const barColor = getGlucoseColor(val);
+          
+          return `
+            <div style="display: flex; flex-direction: column; align-items: center; height: 100%;">
+              <div style="
+                width: 20px;
+                height: ${heightPercent}%;
+                background: ${barColor};
+                border-radius: 3px 3px 0 0;
+                transition: height 0.3s;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              " title="${val} mg/dL - ${times[index]}"></div>
+              <div style="margin-top: 5px; font-size: 0.7em; color: #666;">${times[index]}</div>
+              <div style="margin-top: 2px; font-size: 0.7em; color: #999; font-weight: bold;">${val}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
     `;
+    
+    chartContent.innerHTML = chartHTML;
+    if (!miniChartDiv.querySelector('p')) miniChartDiv.appendChild(chartContent);
+  }
+
+  // ===== HISTORIA POMIARÓW =====
+  function updateHistoryTable() {
+    const tbody = document.querySelector('#history table tbody');
+    if (!tbody) return;
+    
+    if (measurements.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 40px;">
+            <em>Brak pomiarów. Dodaj pierwszy pomiar!</em>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
+    const sorted = [...measurements].sort((a,b) => b.timestamp - a.timestamp);
+    
+    tbody.innerHTML = sorted.map(measurement => {
+      const date = new Date(measurement.date);
+      const formattedDate = date.toLocaleDateString('pl-PL');
+      
+      return `
+        <tr>
+          <td>${formattedDate}</td>
+          <td>${measurement.time}</td>
+          <td>
+            <span class="${getGlucoseClass(measurement.glucose)}">
+              <strong>${measurement.glucose} mg/dL</strong>
+            </span>
+          </td>
+          <td>${measurement.insulin === '-' ? '-' : measurement.insulin + ' IU'}</td>
+          <td>${measurement.carbs === '-' ? '-' : measurement.carbs + ' g'}</td>
+          <td>${measurement.note}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // ===== WYKRES TRENDÓW (12 dni/tygodni/miesięcy) =====
+  function renderTrendChart(range = 'days') {
+    const placeholder = document.getElementById('trend-placeholder');
+    const statsDiv = document.getElementById('chart-stats');
+    if (!placeholder) return;
+    
+    const now = new Date();
+    let labels = [];
+    let avgs = [];
+    let periodCount = 12;
+    
+    if (range === 'days') {
+      // Ostatnie 12 dni
+      for (let i = periodCount - 1; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - i);
+        const iso = d.toISOString().split('T')[0];
+        labels.push(d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }));
+        
+        const dayMeasurements = measurements.filter(m => m.date === iso);
+        if (dayMeasurements.length === 0) {
+          avgs.push(null);
+        } else {
+          const avg = Math.round(dayMeasurements.reduce((s, m) => s + m.glucose, 0) / dayMeasurements.length);
+          avgs.push(avg);
+        }
+      }
+    } else if (range === 'weeks') {
+      // Ostatnie 12 tygodni
+      for (let i = periodCount - 1; i >= 0; i--) {
+        const weekStart = new Date(now);
+        weekStart.setDate(weekStart.getDate() - (i * 7));
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        
+        labels.push(`T${periodCount - i}`);
+        
+        const weekMeasurements = measurements.filter(m => {
+          const date = new Date(m.date);
+          return date >= weekStart && date <= weekEnd;
+        });
+        
+        if (weekMeasurements.length > 0) {
+          const avg = Math.round(weekMeasurements.reduce((s, m) => s + m.glucose, 0) / weekMeasurements.length);
+          avgs.push(avg);
+        } else {
+          avgs.push(null);
+        }
+      }
+    } else if (range === 'months') {
+      // Ostatnie 12 miesięcy
+      for (let i = periodCount - 1; i >= 0; i--) {
+        const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        labels.push(month.toLocaleDateString('pl-PL', { month: 'short', year: '2-digit' }));
+        
+        const monthMeasurements = measurements.filter(m => {
+          const date = new Date(m.date);
+          return date.getFullYear() === month.getFullYear() && 
+                 date.getMonth() === month.getMonth();
+        });
+        
+        if (monthMeasurements.length > 0) {
+          const avg = Math.round(monthMeasurements.reduce((s, m) => s + m.glucose, 0) / monthMeasurements.length);
+          avgs.push(avg);
+        } else {
+          avgs.push(null);
+        }
+      }
+    }
+    
+    const validAvgs = avgs.filter(v => v !== null);
+    if (validAvgs.length === 0) {
+      placeholder.innerHTML = '<div class="empty-state">Brak danych do wykresu</div>';
+      if (statsDiv) statsDiv.innerHTML = '';
+      return;
+    }
+    
+    const minAvg = Math.min(...validAvgs);
+    const maxAvg = Math.max(...validAvgs);
+    const rangeAvg = maxAvg - minAvg || 1;
+    
+    // Tworzymy HTML wykresu
+    placeholder.innerHTML = `
+      <div style="height: 200px; display: flex; align-items: flex-end; justify-content: space-between; padding: 20px 10px; position: relative;">
+        <!-- Linie pomocnicze -->
+        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-between; z-index: 1; pointer-events: none;">
+          ${[0, 0.25, 0.5, 0.75, 1].map(pct => `
+            <div style="border-top: 1px dashed rgba(0,0,0,0.1); width: 100%;"></div>
+          `).join('')}
+        </div>
+        
+        <!-- Słupki -->
+        <div style="display: flex; align-items: flex-end; justify-content: space-between; width: 100%; height: 100%; position: relative; z-index: 2;">
+          ${avgs.map((avg, idx) => {
+            let heightPct;
+            if (avg === null) heightPct = 5;
+            else if (validAvgs.length === 1) heightPct = 50;
+            else heightPct = Math.round(10 + ((avg - minAvg) / rangeAvg) * 80);
+            
+            const displayVal = avg === null ? '-' : (avg + ' mg/dL');
+            const hasData = avg !== null;
+            const barColor = hasData ? getGlucoseColor(avg) : '#e9ecef';
+            
+            return `
+              <div style="display: flex; flex-direction: column; align-items: center; height: 100%; flex: 1; margin: 0 2px;">
+                <div style="
+                  width: 85%;
+                  height: ${hasData ? '0%' : '5%'};
+                  background: ${barColor};
+                  border-radius: 4px 4px 0 0;
+                  transition: height 0.5s;
+                  margin-bottom: 5px;
+                  cursor: pointer;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                " data-target="${heightPct}" title="${hasData ? displayVal : 'Brak danych'}" onclick="showTooltip(${avg || 0}, '${labels[idx]}')"></div>
+                <div style="font-size: 0.8em; font-weight: bold; color: #333; text-align: center;">${displayVal}</div>
+                <div style="margin-top: 5px; font-size: 0.7em; color: #666; text-align: center;">${labels[idx]}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+    
+    // Animacja słupków
+    setTimeout(() => {
+      const bars = placeholder.querySelectorAll('[data-target]');
+      bars.forEach((bar, i) => {
+        const target = bar.getAttribute('data-target');
+        if (target && target !== '5') {
+          setTimeout(() => {
+            bar.style.height = target + '%';
+          }, i * 80);
+        }
+      });
+    }, 100);
+    
+    // Aktualizacja statystyk wykresu
+    if (statsDiv && validAvgs.length > 0) {
+      const avg = Math.round(validAvgs.reduce((a, b) => a + b) / validAvgs.length);
+      const min = Math.min(...validAvgs);
+      const max = Math.max(...validAvgs);
+      const trend = validAvgs.length > 1 ? 
+        ((validAvgs[validAvgs.length - 1] - validAvgs[0]) / validAvgs[0] * 100).toFixed(1) : '0.0';
+      
+      const rangeText = range === 'days' ? 'dni' : range === 'weeks' ? 'tygodni' : 'miesięcy';
+      
+      statsDiv.innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;">
+          <div style="background: #f8f9fa; padding: 10px; border-radius: 8px;">
+            <div style="font-size: 0.8em; color: #666;">Średnia</div>
+            <div style="font-size: 1.2em; font-weight: bold; color: #1e3a8a;">${avg} mg/dL</div>
+          </div>
+          <div style="background: #f8f9fa; padding: 10px; border-radius: 8px;">
+            <div style="font-size: 0.8em; color: #666;">Zakres</div>
+            <div style="font-size: 1.2em; font-weight: bold; color: #1e3a8a;">${min}-${max}</div>
+          </div>
+          <div style="background: #f8f9fa; padding: 10px; border-radius: 8px;">
+            <div style="font-size: 0.8em; color: #666;">Trend (12 ${rangeText})</div>
+            <div style="font-size: 1.2em; font-weight: bold; color: ${parseFloat(trend) > 0 ? '#dc3545' : parseFloat(trend) < 0 ? '#28a745' : '#666'}">
+              ${parseFloat(trend) > 0 ? '↗' : parseFloat(trend) < 0 ? '↘' : '→'} ${Math.abs(trend)}%
+            </div>
+          </div>
+        </div>
+      `;
+    }
   }
   
-  // --- STATYSTYKI OSTATNICH 24H ---
-  const now = Date.now();
-  const last24h = measurements.filter(m => now - m.timestamp <= 24 * 60 * 60 * 1000);
-  
-  if (last24h.length > 0) {
-    const values = last24h.map(m => m.glucose);
+  // Funkcja do wyświetlania tooltipa
+  window.showTooltip = function(value, label) {
+    if (value === 0) return; // Pomijamy puste słupki
+    
+    showNotification(`📊 ${label}: ${value} mg/dL`, 'info');
+  };
+
+  // ===== OBSŁUGA ZMIANY ZAKRESU WYKRESU =====
+  document.getElementById('trend-range-select')?.addEventListener('change', function() {
+    renderTrendChart(this.value);
+  });
+
+  // ===== PODSUMOWANIE ANALIZ =====
+  function updateAnalyticsSummary() {
+    const summaryDiv = document.getElementById('analytics-summary');
+    if (!summaryDiv) return;
+    
+    if (measurements.length === 0) {
+      summaryDiv.innerHTML = '<div class="empty-state">Brak danych do analizy</div>';
+      return;
+    }
+    
+    // Ostatnie 30 dni
+    const now = Date.now();
+    const last30Days = measurements.filter(m => now - m.timestamp <= 30 * 24 * 60 * 60 * 1000);
+    
+    if (last30Days.length === 0) {
+      summaryDiv.innerHTML = '<div class="empty-state">Brak pomiarów z ostatnich 30 dni</div>';
+      return;
+    }
+    
+    const values = last30Days.map(m => m.glucose);
     const avg = Math.round(values.reduce((a,b) => a+b) / values.length);
     const min = Math.min(...values);
     const max = Math.max(...values);
     
-    const summaryHTML = `
-      <li><strong>Średni poziom cukru:</strong> ${avg} mg/dL</li>
-      <li><strong>Liczba pomiarów:</strong> ${last24h.length}</li>
-      <li><strong>Minimalna wartość:</strong> ${min} mg/dL</li>
-      <li><strong>Maksymalna wartość:</strong> ${max} mg/dL</li>
-    `;
+    // Rozkład poziomów
+    const veryLow = values.filter(v => v < 70).length;
+    const normal = values.filter(v => v >= 70 && v <= 140).length;
+    const high = values.filter(v => v > 140 && v <= 180).length;
+    const veryHigh = values.filter(v => v > 180).length;
     
-    if (summaryList) summaryList.innerHTML = summaryHTML;
-  }
-}
-
-// ===== 6. AKTUALIZACJA TABELI HISTORII =====
-function updateHistoryTable() {
-  const tbody = document.querySelector('#history table tbody');
-  if (!tbody) return;
-  
-  if (measurements.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="5" style="text-align: center; padding: 40px;">
-          <em>Brak pomiarów. Dodaj pierwszy pomiar!</em>
-        </td>
-      </tr>
-    `;
-    return;
-  }
-  
-  // Sortujemy od najnowszych
-  const sorted = [...measurements].sort((a,b) => b.timestamp - a.timestamp);
-  
-  // Tworzymy wiersze tabeli
-  tbody.innerHTML = sorted.map(measurement => `
-    <tr>
-      <td>${formatDateForDisplay(measurement.date)}</td>
-      <td>${measurement.time}</td>
-      <td>
-        <span class="${getGlucoseClass(measurement.glucose)}">
-          <strong>${measurement.glucose} mg/dL</strong>
-        </span>
-      </td>
-      <td>${measurement.insulin}</td>
-      <td>${measurement.note}</td>
-    </tr>
-  `).join('');
-}
-
-// ===== 7. MINI WYKRES BEZ BIBLIOTEKI =====
-function updateMiniChart() {
-  const miniChartDiv = document.querySelector('#mini-chart');
-  if (!miniChartDiv) return;
-  
-  const chartContent = miniChartDiv.querySelector('p') || document.createElement('p');
-  
-  if (measurements.length < 2) {
-    chartContent.innerHTML = '<em>Dodaj więcej pomiarów, aby zobaczyć wykres</em>';
-    if (!miniChartDiv.querySelector('p')) miniChartDiv.appendChild(chartContent);
-    return;
-  }
-  
-  // Bierzemy ostatnie 8 pomiarów lub wszystkie jeśli jest mniej
-  const recent = measurements.slice(-8);
-  const values = recent.map(m => m.glucose);
-  const times = recent.map(m => m.time.substring(0,5)); // Tylko godzina
-  
-  // Obliczamy zakres dla skalowania
-  const maxVal = Math.max(...values);
-  const minVal = Math.min(...values);
-  const range = maxVal - minVal || 1; // Zabezpieczenie przed dzieleniem przez 0
-  
-  // Tworzymy wykres słupkowy
-  const chartHTML = `
-    <div style="width: 100%; height: 150px; display: flex; align-items: flex-end; justify-content: space-between; padding: 10px 0;">
-      ${values.map((val, index) => {
-        // Obliczamy wysokość słupka (od 10% do 90% wysokości)
-        const heightPercent = range > 0 ? 10 + ((val - minVal) / range * 80) : 50;
-        const glucoseClass = getGlucoseClass(val);
-        
-        return `
-          <div style="display: flex; flex-direction: column; align-items: center; height: 100%;">
-            <div style="
-              width: 25px;
-              height: ${heightPercent}%;
-              background: ${getGlucoseColor(val)};
-              border-radius: 3px 3px 0 0;
-              transition: height 0.3s;
-            " title="${val} mg/dL"></div>
-            <div style="margin-top: 5px; font-size: 0.8em; color: #666;">${times[index]}</div>
-            <div style="margin-top: 2px; font-size: 0.7em; color: #999;">${val}</div>
+    const inRangePercent = Math.round((normal / values.length) * 100);
+    
+    // Analiza por dnia
+    const morning = last30Days.filter(m => {
+      const hour = parseInt(m.time.split(':')[0]);
+      return hour >= 6 && hour < 12;
+    });
+    
+    const afternoon = last30Days.filter(m => {
+      const hour = parseInt(m.time.split(':')[0]);
+      return hour >= 12 && hour < 18;
+    });
+    
+    const evening = last30Days.filter(m => {
+      const hour = parseInt(m.time.split(':')[0]);
+      return hour >= 18 && hour < 24;
+    });
+    
+    const calculateAvg = (data) => data.length > 0 
+      ? Math.round(data.reduce((sum, m) => sum + m.glucose, 0) / data.length)
+      : 'brak danych';
+    
+    summaryDiv.innerHTML = `
+      <div style="padding: 15px;">
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 0.9em; color: #666;">Średni poziom</div>
+            <div style="font-size: 2em; font-weight: bold; color: #1e3a8a;">${avg} mg/dL</div>
+            <div style="font-size: 0.8em; color: #666;">ostatnie 30 dni</div>
           </div>
-        `;
-      }).join('')}
-    </div>
-  `;
-  
-  chartContent.innerHTML = chartHTML;
-  if (!miniChartDiv.querySelector('p')) miniChartDiv.appendChild(chartContent);
-}
-
-// Pomocnicza funkcja do kolorów wykresu
-function getGlucoseColor(value) {
-  if (value < 70) return '#dc3545';     // Czerwony
-  if (value <= 180) return '#28a745';   // Zielony
-  if (value <= 250) return '#ffc107';   // Żółty
-  return '#dc3545';                     // Czerwony
-}
-
-// ===== 8. ANALIZY I STATYSTYKI =====
-function updateAnalytics() {
-  const analyticsSection = document.querySelector('#analytics .analytics-card:last-child .placeholder');
-  if (!analyticsSection) return;
-  
-  if (measurements.length === 0) {
-    analyticsSection.innerHTML = '<em>Brak danych do analizy</em>';
-    return;
-  }
-  
-  // Ostatnie 7 dni
-  const now = Date.now();
-  const last7days = measurements.filter(m => now - m.timestamp <= 7 * 24 * 60 * 60 * 1000);
-  
-  if (last7days.length === 0) {
-    analyticsSection.innerHTML = '<em>Brak pomiarów z ostatnich 7 dni</em>';
-    return;
-  }
-  
-  const values = last7days.map(m => m.glucose);
-  const avg = Math.round(values.reduce((a,b) => a+b) / values.length);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  
-  // Liczymy ile pomiarów było w normie
-  const inRange = values.filter(v => v >= 70 && v <= 180).length;
-  const inRangePercent = Math.round((inRange / values.length) * 100);
-  
-  // Analiza por dnia
-  const morning = last7days.filter(m => {
-    const hour = parseInt(m.time.split(':')[0]);
-    return hour >= 6 && hour < 12;
-  });
-  
-  const evening = last7days.filter(m => {
-    const hour = parseInt(m.time.split(':')[0]);
-    return hour >= 18 && hour < 24;
-  });
-  
-  const avgMorning = morning.length > 0 
-    ? Math.round(morning.reduce((sum, m) => sum + m.glucose, 0) / morning.length)
-    : 'brak danych';
-    
-  const avgEvening = evening.length > 0
-    ? Math.round(evening.reduce((sum, m) => sum + m.glucose, 0) / evening.length)
-    : 'brak danych';
-  
-  // Tworzymy HTML analiz
-  analyticsSection.innerHTML = `
-    <div style="padding: 15px;">
-      <h4 style="color: #1e3a8a; margin-top: 0;">📊 Ostatnie 7 dni</h4>
-      
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-        <div style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
-          <div style="font-size: 0.9em; color: #666;">Średni poziom</div>
-          <div style="font-size: 1.5em; font-weight: bold; color: #1e3a8a;">${avg} mg/dL</div>
+          
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 0.9em; color: #666;">Czas w zakresie</div>
+            <div style="font-size: 2em; font-weight: bold; color: #28a745;">${inRangePercent}%</div>
+            <div style="font-size: 0.8em;">${normal} z ${values.length} pomiarów</div>
+          </div>
         </div>
         
-        <div style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
-          <div style="font-size: 0.9em; color: #666;">Pomiary w normie</div>
-          <div style="font-size: 1.5em; font-weight: bold; color: #28a745;">${inRangePercent}%</div>
-          <div style="font-size: 0.8em;">${inRange} z ${values.length}</div>
-        </div>
-      </div>
-      
-      <div style="margin-bottom: 15px;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-          <span>Minimalna:</span>
-          <span><strong>${min} mg/dL</strong></span>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span>Maksymalna:</span>
-          <span><strong>${max} mg/dL</strong></span>
-        </div>
-      </div>
-      
-      <hr style="border: none; border-top: 1px solid #dee2e6; margin: 15px 0;">
-      
-      <h4 style="color: #1e3a8a;">⏰ Analiza por dnia</h4>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-        <div style="text-align: center; padding: 10px; background: #e8f4f8; border-radius: 5px;">
-          <div style="font-size: 0.9em;">🌅 Poranne (6-12)</div>
-          <div style="font-size: 1.2em; font-weight: bold;">${avgMorning}</div>
-          <div style="font-size: 0.8em;">${morning.length} pomiarów</div>
+        <!-- Rozkład poziomów -->
+        <h4 style="color: #1e3a8a; margin: 20px 0 10px 0;">Rozkład poziomów glukozy</h4>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px;">
+          <div style="background: rgba(220, 53, 69, 0.1); padding: 10px; border-radius: 6px; border-left: 4px solid #dc3545; text-align: center;">
+            <div style="font-size: 0.8em; color: #666;">Bardzo niski</div>
+            <div style="font-size: 1.2em; font-weight: bold;">${veryLow}</div>
+            <div style="font-size: 0.7em; color: #666;">(&lt;70)</div>
+          </div>
+          <div style="background: rgba(40, 167, 69, 0.1); padding: 10px; border-radius: 6px; border-left: 4px solid #28a745; text-align: center;">
+            <div style="font-size: 0.8em; color: #666;">W normie</div>
+            <div style="font-size: 1.2em; font-weight: bold;">${normal}</div>
+            <div style="font-size: 0.7em; color: #666;">(70-140)</div>
+          </div>
+          <div style="background: rgba(255, 193, 7, 0.1); padding: 10px; border-radius: 6px; border-left: 4px solid #ffc107; text-align: center;">
+            <div style="font-size: 0.8em; color: #666;">Wysoki</div>
+            <div style="font-size: 1.2em; font-weight: bold;">${high}</div>
+            <div style="font-size: 0.7em; color: #666;">(141-180)</div>
+          </div>
+          <div style="background: rgba(220, 53, 69, 0.2); padding: 10px; border-radius: 6px; border-left: 4px solid #dc3545; text-align: center;">
+            <div style="font-size: 0.8em; color: #666;">Bardzo wysoki</div>
+            <div style="font-size: 1.2em; font-weight: bold;">${veryHigh}</div>
+            <div style="font-size: 0.7em; color: #666;">(&gt;180)</div>
+          </div>
         </div>
         
-        <div style="text-align: center; padding: 10px; background: #f8f0e8; border-radius: 5px;">
-          <div style="font-size: 0.9em;">🌆 Wieczorne (18-24)</div>
-          <div style="font-size: 1.2em; font-weight: bold;">${avgEvening}</div>
-          <div style="font-size: 0.8em;">${evening.length} pomiarów</div>
+        <!-- Analiza por dnia -->
+        <h4 style="color: #1e3a8a; margin: 20px 0 10px 0;">Średnie według pory dnia</h4>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+          <div style="padding: 12px; background: #e8f4f8; border-radius: 8px; text-align: center;">
+            <div style="font-size: 0.9em; color: #666;">🌅 Poranne (6-12)</div>
+            <div style="font-size: 1.5em; font-weight: bold;">${calculateAvg(morning)}</div>
+            <div style="font-size: 0.8em; color: #666;">${morning.length} pomiarów</div>
+          </div>
+          <div style="padding: 12px; background: #f0f8e8; border-radius: 8px; text-align: center;">
+            <div style="font-size: 0.9em; color: #666;">🌞 Popołudniowe (12-18)</div>
+            <div style="font-size: 1.5em; font-weight: bold;">${calculateAvg(afternoon)}</div>
+            <div style="font-size: 0.8em; color: #666;">${afternoon.length} pomiarów</div>
+          </div>
+          <div style="padding: 12px; background: #f8f0e8; border-radius: 8px; text-align: center;">
+            <div style="font-size: 0.9em; color: #666;">🌆 Wieczorne (18-24)</div>
+            <div style="font-size: 1.5em; font-weight: bold;">${calculateAvg(evening)}</div>
+            <div style="font-size: 0.8em; color: #666;">${evening.length} pomiarów</div>
+          </div>
         </div>
       </div>
-    </div>
-  `;
-}
-
-// ===== 9. POWIADOMIENIA =====
-function showNotification(message, type = 'info') {
-  // Sprawdzamy czy już istnieje element powiadomienia
-  let notification = document.getElementById('system-notification');
-  
-  if (!notification) {
-    // Tworzymy nowy element powiadomienia
-    notification = document.createElement('div');
-    notification.id = 'system-notification';
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 15px 20px;
-      border-radius: 5px;
-      color: white;
-      font-weight: bold;
-      z-index: 9999;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      opacity: 0;
-      transform: translateY(-20px);
-      transition: opacity 0.3s, transform 0.3s;
     `;
-    document.body.appendChild(notification);
   }
-  
-  // Ustawiamy kolor w zależności od typu
-  const colors = {
-    success: '#28a745',
-    error: '#dc3545',
-    warning: '#ffc107',
-    info: '#17a2b8'
-  };
-  
-  notification.style.backgroundColor = colors[type] || colors.info;
-  notification.textContent = message;
-  
-  // Pokazujemy powiadomienie
-  setTimeout(() => {
-    notification.style.opacity = '1';
-    notification.style.transform = 'translateY(0)';
-  }, 10);
-  
-  // Ukrywamy po 3 sekundach
-  setTimeout(() => {
-    notification.style.opacity = '0';
-    notification.style.transform = 'translateY(-20px)';
-  }, 3000);
-}
 
-// ===== 10. EKSPORT DANYCH =====
-function exportData() {
-  if (measurements.length === 0) {
-    showNotification('Brak danych do eksportu', 'warning');
-    return;
-  }
-  
-  // Formatujemy dane
-  const dataStr = JSON.stringify(measurements, null, 2);
-  const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-  
-  // Tworzymy niewidzialny link
-  const link = document.createElement('a');
-  link.href = dataUri;
-  link.download = `pomiary-cukru-${new Date().toISOString().split('T')[0]}.json`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  
-  showNotification('✅ Dane wyeksportowane pomyślnie!', 'success');
-}
-
-// ===== 11. INICJALIZACJA STRONY =====
-// Gdy strona się załaduje, aktualizujemy wszystkie sekcje
-document.addEventListener('DOMContentLoaded', function() {
-  updateAllSections();
-  
-  // Dodajemy przycisk eksportu w ustawieniach
-  const settingsList = document.querySelector('.settings-list');
-  if (settingsList) {
-    const exportItem = document.createElement('li');
-    exportItem.innerHTML = `
-      <a href="#" id="export-data" style="display: block; text-decoration: none; color: inherit; padding: 12px;">
-        💾 Eksportuj dane do JSON
-      </a>
-    `;
-    
-    // Dodajemy po "Zarządzanie kontem użytkownika"
-    if (settingsList.children.length > 0) {
-      settingsList.insertBefore(exportItem, settingsList.children[1]);
-    } else {
-      settingsList.appendChild(exportItem);
-    }
-    
-    // Obsługa kliknięcia
-    document.getElementById('export-data').addEventListener('click', function(e) {
+  // ===== OBSŁUGA FORMULARZA =====
+  const quickForm = document.getElementById('quick-measurement-form');
+  if (quickForm) {
+    quickForm.addEventListener('submit', function(e) {
       e.preventDefault();
-      exportData();
-    });
-  }
-  
-  // Ustawiamy domyślną datę w formularzu na dzisiaj
-  const dateInput = document.getElementById('data-pomiaru');
-  if (dateInput) {
-    const today = new Date().toISOString().split('T')[0];
-    dateInput.value = today;
-    dateInput.max = today; // Nie można wybrać daty z przyszłości
-  }
-  
-  // Ustawiamy domyślną godzinę na teraz
-  const timeInput = document.getElementById('godzina-pomiaru');
-  if (timeInput) {
-    const now = new Date();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    timeInput.value = `${hours}:${minutes}`;
-  }
-});
-
-// ===== 12. DODATKOWE FUNKCJE (OPCJONALNIE) =====
-// Możesz dodać tę funkcję jeśli chcesz mieć możliwość usuwania pomiarów
-function deleteMeasurement(id) {
-  if (confirm('Czy na pewno chcesz usunąć ten pomiar?')) {
-    measurements = measurements.filter(m => m.id !== id);
-    localStorage.setItem('glucoseMeasurements', JSON.stringify(measurements));
-    updateAllSections();
-    showNotification('🗑️ Pomiar usunięty', 'info');
-  }
-}
-// ===== PRZYCISK DO DODAWANIA PRZYKŁADOWYCH DANYCH =====
-function addSampleData() {
-  if (confirm('Czy dodać przykładowe dane? Stare dane pozostaną nienaruszone.')) {
-    // Tworzymy nowe przykładowe dane
-    const now = new Date();
-    const sampleData = [
-      {
-        id: Date.now() + 1,
-        glucose: 130,
-        date: now.toISOString().split('T')[0],
-        time: "10:00",
-        insulin: 5,
-        note: "Przykładowy pomiar 1",
-        timestamp: Date.now() + 1
-      },
-      {
-        id: Date.now() + 2,
-        glucose: 95,
-        date: now.toISOString().split('T')[0],
-        time: "16:30",
-        insulin: 3,
-        note: "Przykładowy pomiar 2",
-        timestamp: Date.now() + 2
-      },
-      {
-        id: Date.now() + 3,
-        glucose: 155,
-        date: now.toISOString().split('T')[0],
-        time: "21:15",
-        insulin: 7,
-        note: "Przykładowy pomiar 3",
-        timestamp: Date.now() + 3
+      
+      const glucose = document.getElementById('quick-glucose').value;
+      const insulin = document.getElementById('quick-insulin').value;
+      const carbs = document.getElementById('quick-carbs').value;
+      const note = document.getElementById('quick-note').value;
+      
+      if (!glucose) {
+        showNotification('❌ Wprowadź poziom glukozy!', 'error');
+        return;
       }
-    ];
-    
-    // Dodajemy do istniejących danych
-    measurements.push(...sampleData);
-    
-    // Zapisujemy
-    localStorage.setItem('glucoseMeasurements', JSON.stringify(measurements));
-    
-    // Aktualizujemy stronę
-    updateAllSections();
-    
-    showNotification('✅ Dodano przykładowe dane!', 'success');
-  }
-}
 
-// Dodajemy przycisk w ustawieniach
-document.addEventListener('DOMContentLoaded', function() {
-  // ... (twój istniejący kod) ...
-  
-  // Dodajemy przycisk "Dodaj przykładowe dane" w ustawieniach
-  const settingsList = document.querySelector('.settings-list');
-  if (settingsList) {
-    const sampleDataItem = document.createElement('li');
-    sampleDataItem.innerHTML = `
-      <a href="#" id="add-sample-data" style="display: block; text-decoration: none; color: inherit; padding: 12px;">
-        🧪 Dodaj przykładowe dane
-      </a>
-    `;
-    
-    // Dodajemy przed "Eksportuj dane"
-    const exportButton = document.getElementById('export-data');
-    if (exportButton && exportButton.parentElement) {
-      settingsList.insertBefore(sampleDataItem, exportButton.parentElement);
-    } else {
-      settingsList.appendChild(sampleDataItem);
-    }
-    
-    // Obsługa kliknięcia
-    document.getElementById('add-sample-data').addEventListener('click', function(e) {
-      e.preventDefault();
-      addSampleData();
+      const glucoseVal = parseInt(glucose, 10);
+      if (isNaN(glucoseVal) || glucoseVal < 20 || glucoseVal > 800) {
+        showNotification('❌ Poziom glukozy musi być w zakresie 20–800 mg/dL', 'error');
+        return;
+      }
+
+      const now = new Date();
+      const measurement = {
+        id: Date.now(),
+        glucose: glucoseVal,
+        date: now.toISOString().split('T')[0],
+        time: now.toTimeString().slice(0,5),
+        insulin: insulin ? parseFloat(insulin) : '-',
+        carbs: carbs ? parseInt(carbs, 10) : '-',
+        note: note || '-',
+        timestamp: now.getTime()
+      };
+      
+      measurements.push(measurement);
+      saveUserData();
+      
+      updateAllSections();
+      quickForm.reset();
+      
+      showNotification(`✅ Dodano pomiar: ${glucose} mg/dL`, 'success');
     });
   }
-});
-// ===== OBSŁUGA SZYBKIEGO FORMULARZA =====
-const quickForm = document.getElementById('quick-measurement-form');
-if (quickForm) {
-  quickForm.addEventListener('submit', function(e) {
+
+  // ===== EKSPORT DANYCH =====
+  document.getElementById('export-data')?.addEventListener('click', function(e) {
     e.preventDefault();
     
-    const glucose = document.getElementById('quick-glucose').value;
-    const insulin = document.getElementById('quick-insulin').value;
-    const note = document.getElementById('quick-note').value;
-    
-    if (!glucose) {
-      showNotification('❌ Wprowadź poziom cukru!', 'error');
+    if (measurements.length === 0) {
+      showNotification('Brak danych do eksportu', 'warning');
       return;
     }
     
-    const now = new Date();
-    const measurement = {
-      id: Date.now(),
-      glucose: parseInt(glucose),
-      date: now.toISOString().split('T')[0],
-      time: now.toTimeString().slice(0,5),
-      insulin: insulin || '-',
-      note: note || '-',
-      timestamp: now.getTime(),
-      glucoseClass: getGlucoseClass(parseInt(glucose))
-    };
+    const dataStr = JSON.stringify(measurements, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
     
-    measurements.push(measurement);
-    localStorage.setItem('glucoseMeasurements', JSON.stringify(measurements));
+    const link = document.createElement('a');
+    link.href = dataUri;
+    link.download = `pomiary-glukozy-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     
-    updateAllSections();
-    quickForm.reset();
-    
-    showNotification(`✅ Dodano pomiar: ${glucose} mg/dL`, 'success');
+    showNotification('✅ Dane wyeksportowane pomyślnie!', 'success');
   });
-}
-// ===== USUWANIE WSZYSTKICH DANYCH =====
-function clearAllData() {
-  if (confirm('⚠️ UWAGA! Czy na pewno chcesz usunąć WSZYSTKIE dane? Tej operacji nie można cofnąć!')) {
-    measurements = [];
-    localStorage.removeItem('glucoseMeasurements');
-    updateAllSections();
-    showNotification('🗑️ Wszystkie dane zostały usunięte', 'warning');
-  }
-}
 
-// Dodajemy przycisk w ustawieniach
-document.addEventListener('DOMContentLoaded', function() {
-  const settingsList = document.querySelector('.settings-list');
-  if (settingsList) {
-    const clearDataItem = document.createElement('li');
-    clearDataItem.innerHTML = `
-      <a href="#" id="clear-all-data" style="display: block; text-decoration: none; color: #dc3545; padding: 12px;">
-        🗑️ Usuń wszystkie dane
-      </a>
-    `;
+  // ===== DODAWANIE PRZYKŁADOWYCH DANYCH =====
+  document.getElementById('add-sample-data')?.addEventListener('click', function(e) {
+    e.preventDefault();
     
-    // Dodajemy na końcu listy
-    settingsList.appendChild(clearDataItem);
+    const today = new Date();
+    const sampleData = [];
     
-    document.getElementById('clear-all-data').addEventListener('click', function(e) {
-      e.preventDefault();
-      clearAllData();
-    });
+    // Generujemy 90 dni danych (dla wszystkich zakresów)
+    for (let i = 90; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      // 1-4 pomiarów dziennie
+      const numMeasurements = Math.floor(Math.random() * 4) + 1;
+      
+      for (let j = 0; j < numMeasurements; j++) {
+        const hour = 6 + Math.floor(Math.random() * 15); // 6-21
+        const minute = Math.floor(Math.random() * 60);
+        const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        
+        // Realistyczne wartości glukozy
+        let glucose;
+        const rand = Math.random();
+        if (i < 7) {
+          // Ostatni tydzień: lepsza kontrola
+          glucose = 85 + Math.floor(Math.random() * 70);
+        } else if (i < 30) {
+          // Ostatni miesiąc: normalna kontrola
+          if (rand < 0.1) glucose = 65 + Math.floor(Math.random() * 10);
+          else if (rand < 0.8) glucose = 80 + Math.floor(Math.random() * 70);
+          else glucose = 150 + Math.floor(Math.random() * 40);
+        } else {
+          // Starsze dane: większa zmienność
+          if (rand < 0.15) glucose = 60 + Math.floor(Math.random() * 20);
+          else if (rand < 0.75) glucose = 85 + Math.floor(Math.random() * 80);
+          else if (rand < 0.95) glucose = 165 + Math.floor(Math.random() * 50);
+          else glucose = 215 + Math.floor(Math.random() * 60);
+        }
+        
+        sampleData.push({
+          id: Date.now() - (i * 100000) - (j * 10000),
+          glucose: glucose,
+          date: dateStr,
+          time: timeStr,
+          insulin: Math.random() > 0.4 ? Math.floor(Math.random() * 12) : 0,
+          carbs: Math.random() > 0.3 ? Math.floor(Math.random() * 50) : 0,
+          note: ['Na czczo', 'Po śniadaniu', 'Po obiedzie', 'Przed snem', 'Po treningu', 'Przed posiłkiem', 'Po posiłku'][Math.floor(Math.random() * 7)],
+          timestamp: new Date(`${dateStr}T${timeStr}`).getTime()
+        });
+      }
+    }
+    
+    // Dodajemy do istniejących danych
+    measurements = [...measurements, ...sampleData];
+    saveUserData();
+    
+    updateAllSections();
+    showNotification(`✅ Dodano ${sampleData.length} przykładowych pomiarów!`, 'success');
+  });
+
+  // ===== USUWANIE DANYCH =====
+  document.getElementById('clear-all-data')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    if (confirm('⚠️ UWAGA! Czy na pewno chcesz usunąć WSZYSTKIE dane? Tej operacji nie można cofnąć!')) {
+      measurements = [];
+      if (currentUser && users[currentUser]) {
+        users[currentUser].measurements = [];
+        localStorage.setItem('glucoseUsers', JSON.stringify(users));
+      } else {
+        localStorage.removeItem('glucoseMeasurements');
+      }
+      updateAllSections();
+      showNotification('🗑️ Wszystkie dane zostały usunięte', 'warning');
+    }
+  });
+
+  // ===== INICJALIZACJA =====
+  updateAllSections();
+  
+  // Jeśli brak danych, pokaż komunikat
+  if (measurements.length === 0) {
+    setTimeout(() => {
+      showNotification('👋 Witaj! Dodaj pierwszy pomiar lub załaduj przykładowe dane w ustawieniach.', 'info');
+    }, 1000);
   }
 });

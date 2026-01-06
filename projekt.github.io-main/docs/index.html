@@ -3,21 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>System monitorowania poziomu cukru</title>
+  <title>Interaktywny system monitorowania poziomu cukru we krwi</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- HEADER Z PROFILU I MENU -->
 <header>
   <div id="user-profile">
-    <img src="placeholder-profile.png" alt="Profil użytkownika" id="profile-pic">
-    <span>Jan Kowalski</span>
+    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIwIDBDMzEuMDQ1NyAwIDQwIDguOTU0MzA1IDQwIDIwQzQwIDMxLjA0NTcgMzEuMDQ1NyA0MCAyMCA0MEM4Ljk1NDMwNSA0MCAwIDMxLjA0NTcgMCAyMEMwIDguOTU0MzA1IDguOTU0MzA1IDAgMjAgMFpNMjAgMTBDMjYuNjI3NCAxMCAzMiAxNS4zNzI2IDMyIDIyQzMyIDI4LjYyNzQgMjYuNjI3NCAzNCAyMCAzNEMxMy4zNzI2IDM0IDggMjguNjI3NCA4IDIyQzggMTUuMzcyNiAxMy4zNzI2IDEwIDIwIDEwWk0yMCAxMkMxNi42ODYzIDEyIDE0IDE0LjY4NjMgMTQgMThDMTQgMjEuMzEzNyAxNi42ODYzIDI0IDIwIDI0QzIzLjMxMzcgMjQgMjYgMjEuMzEzNyAyNiAxOEMyNiAxNC42ODYzIDIzLjMxMzcgMTIgMjAgMTJaIiBmaWxsPSIjOGIwMDAwIi8+Cjwvc3ZnPgo=" alt="Profil użytkownika" id="profile-pic">
+    <span id="username-display">Gość</span>
   </div>
-  <h1>System monitorowania poziomu cukru</h1>
+  <h1>Interaktywny system monitorowania poziomu cukru we krwi</h1>
   <nav>
     <ul>
-      <!-- data-target wskazuje sekcję, którą ma pokazać JS -->
       <li><a href="#" data-target="dashboard">Strona główna</a></li>
       <li><a href="#" data-target="history">Historia</a></li>
       <li><a href="#" data-target="analytics">Analizy</a></li>
@@ -28,63 +26,66 @@
 
 <main>
   <!-- SZYBKI FORMULARZ DODAWANIA POMIARU -->
-<div class="dashboard-card" id="quick-add-form">
-  <h2>Szybki pomiar</h2>
-  <form id="quick-measurement-form">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-      <div>
-        <label for="quick-glucose">Cukier (mg/dL):</label>
-        <input type="number" id="quick-glucose" required min="20" max="600" 
-               style="width: 100%; padding: 8px;" placeholder="np. 120">
+  <div class="dashboard-card" id="quick-add-form">
+    <h2>Dodaj pomiar</h2>
+    <form id="quick-measurement-form">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+        <div>
+          <label for="quick-glucose">Glukoza (mg/dL):</label>
+          <input type="number" id="quick-glucose" required min="20" max="800" 
+                 style="width: 100%; padding: 8px;" placeholder="np. 120">
+        </div>
+        <div>
+          <label for="quick-insulin">Insulina (IU):</label>
+          <input type="number" id="quick-insulin" step="0.5" min="0" max="50"
+                 style="width: 100%; padding: 8px;" placeholder="np. 5">
+        </div>
       </div>
-      <div>
-        <label for="quick-insulin">Insulina:</label>
-        <input type="number" id="quick-insulin" step="0.5" 
-               style="width: 100%; padding: 8px;" placeholder="np. 5">
+
+      <div style="margin-bottom: 10px;">
+        <label for="quick-carbs">Węglowodany (g):</label>
+        <input type="number" id="quick-carbs" step="1" min="0" max="300"
+               style="width: 100%; padding: 8px;" placeholder="np. 30">
       </div>
-    </div>
-    
-    <div style="margin-bottom: 10px;">
-      <label for="quick-note">Notatka:</label>
-      <input type="text" id="quick-note" 
-             style="width: 100%; padding: 8px;" 
-             placeholder="np. Po śniadaniu">
-    </div>
-    
-    <button type="submit" 
-            style="background: #28a745; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer;">
-      📝 Zapisz szybki pomiar
-    </button>
-  </form>
-</div>
+      
+      <div style="margin-bottom: 10px;">
+        <label for="quick-note">Notatka:</label>
+        <input type="text" id="quick-note" 
+               style="width: 100%; padding: 8px;" 
+               placeholder="np. Po śniadaniu">
+      </div>
+      
+      <button type="submit" 
+              style="background: #28a745; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer;">
+        📝 Dodaj pomiar
+      </button>
+    </form>
+  </div>
+
   <!-- DASHBOARD -->
   <section id="dashboard">
     <div class="dashboard-card" id="current-glucose-card">
-      <h2>Aktualny poziom cukru</h2>
-      <p>[Aktualny poziom cukru]</p>
-      <p>[Data i godzina ostatniego pomiaru]</p>
+      <h2>Aktualny poziom glukozy</h2>
+      <p>[Aktualny poziom glukozy]</p>
     </div>
 
     <div class="dashboard-card" id="mini-chart">
       <h2>Ostatnie 24h</h2>
-      <p>[Mini wykres poziomu cukru]</p>
+      <p>[Mini wykres poziomu glukozy]</p>
     </div>
 
     <div class="dashboard-card" id="daily-summary">
       <h2>Podsumowanie dnia</h2>
       <ul>
-        <li>Średni poziom cukru: [Placeholder]</li>
+        <li>Średni poziom glukozy: [Placeholder]</li>
         <li>Liczba pomiarów: [Placeholder]</li>
         <li>Minimalna wartość: [Placeholder]</li>
         <li>Maksymalna wartość: [Placeholder]</li>
       </ul>
     </div>
-
-    <!-- PRZYCISK OTWIERAJĄCY MODAL -->
-    <button id="open-add-measurement">Dodaj pomiar</button>
   </section>
 
-  <!-- PODSTRONY UKRYTE NA START -->
+  <!-- HISTORIA -->
   <section id="history" class="hidden">
     <h2>Historia pomiarów</h2>
     <div class="table-wrap">
@@ -93,84 +94,128 @@
           <tr>
             <th>Data</th>
             <th>Godzina</th>
-            <th>Poziom cukru</th>
-            <th>Insulina</th>
+            <th>Poziom glukozy</th>
+            <th>Insulina (IU)</th>
+            <th>Węglowodany (g)</th>
             <th>Notatka</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>[YYYY-MM-DD]</td>
-            <td>[HH:MM]</td>
-            <td>[Wartość]</td>
-            <td>[Dawka]</td>
-            <td>[Notatka]</td>
-          </tr>
+          <!-- Wypełniane przez JS -->
         </tbody>
       </table>
     </div>
   </section>
 
+  <!-- ANALIZY -->
   <section id="analytics" class="hidden">
     <h2>Analizy i statystyki</h2>
+    
     <div class="analytics-card">
-      <h3>Wykresy trendów</h3>
-      <div class="placeholder">[Wykres trendów]</div>
+      <h3>Wykres trendów</h3>
+      <div class="chart-controls">
+        <label for="trend-range-select">Wybierz zakres:</label>
+        <select id="trend-range-select" style="margin-left: 10px; padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd;">
+          <option value="days">Ostatnie 12 dni</option>
+          <option value="weeks">Ostatnie 12 tygodni</option>
+          <option value="months">Ostatnie 12 miesięcy</option>
+        </select>
+      </div>
+      <div class="placeholder" id="trend-placeholder">
+        <!-- Wykres pojawi się tutaj -->
+      </div>
+      <div id="chart-stats" style="margin-top: 15px;"></div>
     </div>
+    
     <div class="analytics-card">
-      <h3>Podsumowania</h3>
-      <div class="placeholder">[Statystyki tygodniowe/miesięczne]</div>
+      <h3>Podsumowanie</h3>
+      <div class="placeholder" id="analytics-summary">
+        <!-- Statystyki pojawią się tutaj -->
+      </div>
     </div>
   </section>
 
+  <!-- USTAWIENIA -->
   <section id="settings" class="hidden">
     <h2>Ustawienia</h2>
-    <ul class="settings-list">
-      <li>Zarządzanie kontem użytkownika</li>
-      <li>Eksport danych</li>
-      <li>Wyloguj się</li>
-    </ul>
+    
+    <!-- KONTO UŻYTKOWNIKA -->
+    <div class="settings-card">
+      <h3>Konto użytkownika</h3>
+      <div id="account-section">
+        <div id="login-form" style="display: block;">
+          <div style="margin-bottom: 15px;">
+            <label for="username">Nazwa użytkownika:</label>
+            <input type="text" id="username" style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px;">
+          </div>
+          <div style="margin-bottom: 15px;">
+            <label for="password">Hasło:</label>
+            <input type="password" id="password" style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px;">
+          </div>
+          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <button id="register-btn" style="flex: 1; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+              Zarejestruj się
+            </button>
+            <button id="login-btn" style="flex: 1; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+              Zaloguj się
+            </button>
+          </div>
+        </div>
+        
+        <div id="user-info" style="display: none;">
+          <div style="padding: 15px; background: #e8f4f8; border-radius: 8px; margin-bottom: 15px;">
+            <div style="font-weight: bold; color: #1e3a8a;">Zalogowany jako: <span id="logged-user"></span></div>
+            <div style="font-size: 0.9em; color: #666; margin-top: 5px;">ID użytkownika: <span id="user-id"></span></div>
+          </div>
+          <button id="logout-btn" style="width: 100%; padding: 12px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+            Wyloguj się
+          </button>
+        </div>
+        
+        <div id="login-message" style="margin-top: 10px; padding: 10px; border-radius: 6px; display: none;"></div>
+      </div>
+    </div>
+    
+    <!-- USTAWIENIA WYGLĄDU -->
+    <div class="settings-card">
+      <h3>Wygląd</h3>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px 0;">
+        <span style="font-weight: bold;">Tryb ciemny</span>
+        <label class="switch">
+          <input type="checkbox" id="dark-mode-toggle">
+          <span class="slider round"></span>
+        </label>
+      </div>
+    </div>
+    
+    <!-- ZARZĄDZANIE DANYMI -->
+    <div class="settings-card">
+      <h3>Zarządzanie danymi</h3>
+      <ul class="settings-list">
+        <li>
+          <a href="#" id="export-data" style="display: block; text-decoration: none; color: inherit; padding: 12px;">
+            💾 Eksportuj dane do JSON
+          </a>
+        </li>
+        <li>
+          <a href="#" id="add-sample-data" style="display: block; text-decoration: none; color: inherit; padding: 12px;">
+            📊 Dodaj przykładowe dane
+          </a>
+        </li>
+        <li>
+          <a href="#" id="clear-all-data" style="display: block; text-decoration: none; color: #dc3545; padding: 12px;">
+            🗑️ Usuń wszystkie dane
+          </a>
+        </li>
+      </ul>
+    </div>
   </section>
 </main>
 
-<!-- MODAL DODAWANIA POMIARU - UKRYTY NA START -->
-<div id="add-measurement-modal" class="hidden">
-  <div class="modal-content">
-    <span id="close-modal">&times;</span>
-    <h2>Dodaj pomiar</h2>
-    <form>
-      <div>
-        <label for="poziom-cukru">Poziom cukru (mg/dL):</label>
-        <input type="number" id="poziom-cukru" name="poziom_cukru" placeholder="Wpisz poziom cukru">
-      </div>
-      <div>
-        <label for="data-pomiaru">Data pomiaru:</label>
-        <input type="date" id="data-pomiaru" name="data_pomiaru">
-      </div>
-      <div>
-        <label for="godzina-pomiaru">Godzina pomiaru:</label>
-        <input type="time" id="godzina-pomiaru" name="godzina_pomiaru">
-      </div>
-      <div>
-        <label for="dawka-insuliny">Dawka insuliny (opcjonalnie):</label>
-        <input type="number" id="dawka-insuliny" name="dawka_insuliny">
-      </div>
-      <div>
-        <label for="notatka">Notatka (opcjonalnie):</label>
-        <textarea id="notatka" name="notatka" rows="4"></textarea>
-      </div>
-      <div>
-        <button type="submit" class="primary">Zapisz pomiar</button>
-      </div>
-    </form>
-  </div>
-</div>
-
 <footer>
-  <p>System monitorowania poziomu cukru - wersja demo</p>
+  <p>Interaktywny system monitorowania poziomu cukru we krwi - wersja demo</p>
 </footer>
 
-<!-- SKRYPT ZAŁADOWANY NA SAMYM KOŃCU -->
 <script src="script.js"></script>
 </body>
 </html>
